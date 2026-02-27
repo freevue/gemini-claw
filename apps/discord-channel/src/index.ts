@@ -32,11 +32,13 @@ const startBridgeServer = (api: any) => {
       req.on('data', (chunk) => (body += chunk))
       req.on('end', async () => {
         try {
-          const { messageId, channelId, text } = JSON.parse(body)
-          console.log(`[Push Notification] Updating message ${messageId}: ${text.slice(0, 30)}...`)
+          const { channelId, text } = JSON.parse(body)
+          console.log(
+            `[Push Notification] Sending new message to ${channelId}: ${text.slice(0, 30)}...`
+          )
 
-          // 디스코드 메시지 수정 (Edit)
-          await api.channels.editMessage(channelId, messageId, {
+          // 기존 Edit 대신 새로운 메시지 생성 (Create)
+          await api.channels.createMessage(channelId, {
             content: text,
           })
 
@@ -69,27 +71,24 @@ client.on(GatewayDispatchEvents.MessageCreate, async ({ data: message, api }) =>
     `\n[Input Received] Channel: ${message.channel_id} | ${message.author.username}: ${message.content}`
   )
 
-  // 1. Placeholder 메시지 발송 ("생각 중...")
-  const placeholder = await api.channels.createMessage(message.channel_id, {
-    content: '젬알레(Gemini)가 작업 준비를 마치고 있습니다... 🔄',
-  })
+  // 1. 타이핑 인디케이터 활성화 (작업 중임을 사용자에게 알림)
+  try {
+    await api.channels.showTyping(message.channel_id)
+  } catch (err) {
+    console.error('[Index] Error triggering typing:', err)
+  }
 
   // 2. 멘션 제거 (있는 경우에만)
   const userPrompt = message.content.replace(new RegExp(`<@!?${botId}>`, 'g'), '').trim()
 
   // 3. Gemini CLI에 입력 전달 (비동기로 실행, 결과는 Skill이 직접 푸시)
-  // bridge.sendMessage 내부에서 환경변수(messageId, channelId)를 설정하여 전달해야 함
   try {
-    // bridge.sendMessage는 Gemini CLI 실행을 시작만 하고,
-    // 실제 답변은 Gemini가 스킬을 통해 비동기적으로(HTTP Push) 보내게 됨.
-    bridge.sendMessage(userPrompt, placeholder.id, message.channel_id).catch((err) => {
+    // 이제 placeholder가 없으므로 messageId는 빈 문자열로 전달
+    bridge.sendMessage(userPrompt, '', message.channel_id).catch((err) => {
       console.error('[Index] Gemini Execution Error:', err)
     })
   } catch (error) {
     console.error('[Index] Error starting bridge:', error)
-    await api.channels.editMessage(message.channel_id, placeholder.id, {
-      content: '⚠️ 터미널과의 연결에 실패했습니다.',
-    })
   }
 })
 

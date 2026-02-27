@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "declaration": true,
+    "module": "ESNext",
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "allowJs": true,
+    "moduleResolution": "Bundler",
+    "allowSyntheticDefaultImports": true,
+    "types": ["node"],
+    "strict": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "rootDir": "./src",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", "dist", "claw", ".agents"]
+}
